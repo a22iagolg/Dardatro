@@ -26,7 +26,7 @@ public class Dartboard : MonoBehaviour
         SetCircleSize(innerVisual, innerRadius);
         SetCircleSize(middleVisual, middleRadius);
     }
-
+    // Test Commit
     void SetCircleSize(SpriteRenderer sr, float radius)
     {
         float currentSize = sr.bounds.size.x;
