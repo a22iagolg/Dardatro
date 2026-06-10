@@ -3,14 +3,15 @@ using UnityEngine;
 public class HandManager : MonoBehaviour
 {
     [Header("Config")]
-    public int maxHands = 4;
-    public int dartsPerHand = 3;
+    public int maxHands     = 2;
+    public int dartsPerHand = 4;
 
     private int _handsRemaining;
     private int _dartsRemaining;
     private int _currentHandIndex;
     private int _handsModifier = 0;
     private int _dartsModifier = 0;
+    private bool _levelCleared = false;
 
     void OnEnable()
     {
@@ -24,6 +25,7 @@ public class HandManager : MonoBehaviour
 
     void OnLevelCleared()
     {
+        _levelCleared = true;
     }
 
     void Start()
@@ -33,7 +35,8 @@ public class HandManager : MonoBehaviour
 
     public void StartRun()
     {
-        _handsRemaining = maxHands + _handsModifier;
+        _levelCleared     = false;
+        _handsRemaining   = maxHands + _handsModifier;
         _currentHandIndex = 0;
         StartHand();
     }
@@ -45,6 +48,7 @@ public class HandManager : MonoBehaviour
         EventBus.Publish_HandStarted();
         Debug.Log($"Mano {_currentHandIndex + 1} | Dardos: {_dartsRemaining} | Manos restantes: {_handsRemaining}");
     }
+
     void ClearDarts()
     {
         GameObject[] darts = GameObject.FindGameObjectsWithTag("Dart");
@@ -57,6 +61,7 @@ public class HandManager : MonoBehaviour
         _handsModifier = handsModifier;
         _dartsModifier = dartsModifier;
     }
+
     public void UseDart()
     {
         _dartsRemaining--;
@@ -65,9 +70,11 @@ public class HandManager : MonoBehaviour
 
     public void CheckHandEnd()
     {
+        if (_levelCleared) return;
         if (_dartsRemaining <= 0)
             EvaluateHand();
     }
+
     void EvaluateHand()
     {
         _currentHandIndex++;
@@ -85,7 +92,7 @@ public class HandManager : MonoBehaviour
         }
     }
 
-    public int GetHandsRemaining() => _handsRemaining;
-    public int GetDartsRemaining() => _dartsRemaining;
+    public int GetHandsRemaining()   => _handsRemaining;
+    public int GetDartsRemaining()   => _dartsRemaining;
     public int GetCurrentHandIndex() => _currentHandIndex;
 }

@@ -152,6 +152,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 12e088da5ca8c974fa0dad88047138fa, type: 2}
   handManager: {fileID: 625020691}
   scoreCalculator: {fileID: 931290557}
+  dartLauncher: {fileID: 680484085}
 --- !u!4 &199587530
 Transform:
   m_ObjectHideFlags: 0
