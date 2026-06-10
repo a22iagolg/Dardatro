@@ -9,6 +9,8 @@ public class HandManager : MonoBehaviour
     private int _handsRemaining;
     private int _dartsRemaining;
     private int _currentHandIndex;
+    private int _handsModifier = 0;
+    private int _dartsModifier = 0;
 
     void OnEnable()
     {
@@ -22,7 +24,6 @@ public class HandManager : MonoBehaviour
 
     void OnLevelCleared()
     {
-        enabled = false;
     }
 
     void Start()
@@ -32,19 +33,18 @@ public class HandManager : MonoBehaviour
 
     public void StartRun()
     {
-        _handsRemaining = maxHands;
+        _handsRemaining = maxHands + _handsModifier;
         _currentHandIndex = 0;
         StartHand();
     }
 
     void StartHand()
     {
-        _dartsRemaining = dartsPerHand;
+        _dartsRemaining = dartsPerHand + _dartsModifier;
         ClearDarts();
         EventBus.Publish_HandStarted();
         Debug.Log($"Mano {_currentHandIndex + 1} | Dardos: {_dartsRemaining} | Manos restantes: {_handsRemaining}");
     }
-
     void ClearDarts()
     {
         GameObject[] darts = GameObject.FindGameObjectsWithTag("Dart");
@@ -52,6 +52,11 @@ public class HandManager : MonoBehaviour
             Destroy(dart);
     }
 
+    public void ApplyModifiers(int handsModifier, int dartsModifier)
+    {
+        _handsModifier = handsModifier;
+        _dartsModifier = dartsModifier;
+    }
     public void UseDart()
     {
         _dartsRemaining--;

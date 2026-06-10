@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3b3a0e4305ee6944a01288704829655, type: 3}
+  m_Name: Escenario1
+  m_EditorClassIdentifier: Assembly-CSharp::ScenarioData
+  scenarioName: Bareto
+  background: {fileID: 0}
+  enemy1: {fileID: 11400000, guid: 69547b31580ac6a41a060b8105c3e8ec, type: 2}
+  enemy2: {fileID: 11400000, guid: f80049722859a1845a7887101c84b313, type: 2}
+  boss: {fileID: 11400000, guid: f80049722859a1845a7887101c84b313, type: 2}
+  hasEventAfterEnemy1: 0
+  hasEventAfterEnemy2: 0

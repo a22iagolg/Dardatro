@@ -31,7 +31,6 @@ public class DartLauncher : MonoBehaviour
     }
     void OnLevelCleared()
     {
-        enabled = false;
     }
 
     void Update()
