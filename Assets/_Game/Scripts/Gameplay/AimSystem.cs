@@ -4,100 +4,91 @@ public class AimSystem : MonoBehaviour
 {
     public enum AimPhase
     {
-        Phase1_Select,
-        Phase2_Precision
+        Phase1_Move,
+        Phase2_Bar
     }
 
-    public AimPhase currentPhase = AimPhase.Phase1_Select;
+    public AimPhase currentPhase = AimPhase.Phase1_Move;
 
-    [Header("Fase 1")]
-    public float maxRadius = 7.0f;
-    public float minRadius = 0.3f;
-    public float sizeSpeed = 1f;
+    [Header("Phase 1 - Crosshair")]
+    public float trembleAmount = 0.15f;
+    public float trembleSpeed  = 6f;
 
-    [Header("Fase 2")]
-    public float jumpInterval = 0.4f;
-    public float moveSpeed = 8f;
+    [Header("Phase 2 - Barra")]
+    public float barSpeed    = 2f;
+    public float perfectZone = 0.15f;
+    public float goodZone    = 0.35f;
 
-    [Header("Config")]
-    public float minTimeBeforeShoot = 0.1f;
+    // Output público
+    public Vector2 aimPosition     { get; private set; }
+    public float   barValue        { get; private set; }
+    public float   phase2StartTime { get; private set; }
 
-    // State
-    private float _currentRadius;
-    private float _sizeTimer;
-    private Vector2 _currentCenter;
-    private Vector2 _lockedCenter;
-    private float _jumpTimer;
-    private Vector2 _targetPos;
+    // Calculadas en base a los valores del Inspector
+    public bool isPerfectAim => Mathf.Abs(barValue - 0.5f) <= perfectZone / 2f;
+    public bool isGoodAim    => Mathf.Abs(barValue - 0.5f) <= goodZone    / 2f && !isPerfectAim;
 
-    public Vector2 aimPosition { get; private set; }
-    public float phase2StartTime { get; private set; }
-
-    void Start()
-    {
-        _currentRadius = maxRadius;
-    }
+    // State privado
+    private Vector2 _lockedPosition;
+    private float   _trembleTimer;
+    private float   _barDirection = 1f;
 
     void Update()
     {
         switch (currentPhase)
         {
-            case AimPhase.Phase1_Select:
-                Phase1();
-                break;
-            case AimPhase.Phase2_Precision:
-                Phase2();
-                break;
+            case AimPhase.Phase1_Move: Phase1(); break;
+            case AimPhase.Phase2_Bar:  Phase2(); break;
         }
     }
 
     void Phase1()
     {
         Vector3 mouse = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        _currentCenter = new Vector2(mouse.x, mouse.y);
+        Vector2 mousePos = new Vector2(mouse.x, mouse.y);
 
-        _sizeTimer += Time.deltaTime * sizeSpeed;
-        float oscillation = Mathf.Sin(_sizeTimer * Mathf.PI);
-        _currentRadius = Mathf.Lerp(minRadius, maxRadius, (oscillation + 1f) / 2f);
+        _trembleTimer += Time.deltaTime * trembleSpeed;
+        float noiseX = (Mathf.PerlinNoise(_trembleTimer, 0f) - 0.5f) * 2f;
+        float noiseY = (Mathf.PerlinNoise(0f, _trembleTimer) - 0.5f) * 2f;
 
-        aimPosition = _currentCenter;
+        aimPosition = mousePos + new Vector2(noiseX, noiseY) * trembleAmount;
     }
 
     void Phase2()
     {
-        _jumpTimer -= Time.deltaTime;
+        barValue += _barDirection * barSpeed * Time.deltaTime;
 
-        if (_jumpTimer <= 0)
-        {
-            _jumpTimer = jumpInterval;
-            PickNewTarget();
-        }
-
-        aimPosition = Vector2.Lerp(aimPosition, _targetPos, Time.deltaTime * moveSpeed);
+        if (barValue >= 1f) { barValue = 1f; _barDirection = -1f; }
+        if (barValue <= 0f) { barValue = 0f; _barDirection =  1f; }
     }
 
-    public void StartPhase2()
+    public void LockPosition()
     {
-        _lockedCenter = _currentCenter;
-        currentPhase = AimPhase.Phase2_Precision;
-        PickNewTarget();
-        _jumpTimer = jumpInterval;
-        aimPosition = _lockedCenter;
-        phase2StartTime = Time.time;
+        _lockedPosition    = aimPosition;
+        currentPhase       = AimPhase.Phase2_Bar;
+        barValue           = 0f;
+        _barDirection      = 1f;
+        phase2StartTime    = Time.time;
     }
 
-    void PickNewTarget()
-    {
-        _targetPos = _lockedCenter + Random.insideUnitCircle * _currentRadius;
-    }
+public float GetBarAccuracy()
+{
+    float dist    = Mathf.Abs(barValue - 0.5f);
+    float maxDist = 0.5f;
 
+    if (dist <= perfectZone / 2f) return 0f;
+
+    if (dist <= goodZone / 2f)
+        return Mathf.InverseLerp(perfectZone / 2f, goodZone / 2f, dist) * 0.5f;
+
+    return 0.5f + Mathf.InverseLerp(goodZone / 2f, maxDist, dist) * 0.5f;
+}
     public void ResetAim()
     {
-        currentPhase = AimPhase.Phase1_Select;
-        _sizeTimer = 0f;
-        _currentRadius = maxRadius;
+        currentPhase  = AimPhase.Phase1_Move;
+        _trembleTimer = 0f;
+        barValue      = 0f;
     }
 
-    public float GetCurrentRadius() => _currentRadius;
-    public Vector2 GetCenter() => currentPhase == AimPhase.Phase1_Select ? _currentCenter : _lockedCenter;
+    public Vector2 GetLockedPosition() => _lockedPosition;
 }

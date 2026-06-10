@@ -6,6 +6,33 @@ public class DartLauncher : MonoBehaviour
     public AimSystem aimSystem;
     public Target target;
     public GameObject dartPrefab;
+    public HandManager handManager;
+
+
+    [Header("Desviación máxima en unidades")]
+    public float maxDeviation = 1.5f;
+
+    void OnEnable()
+    {
+        EventBus.OnRunEnded += OnRunEnded;
+        EventBus.OnLevelCleared += OnLevelCleared;
+
+    }
+
+    void OnDisable()
+    {
+        EventBus.OnRunEnded -= OnRunEnded;
+        EventBus.OnLevelCleared -= OnLevelCleared;
+    }
+
+    void OnRunEnded()
+    {
+        enabled = false;
+    }
+    void OnLevelCleared()
+    {
+        enabled = false;
+    }
 
     void Update()
     {
@@ -17,11 +44,11 @@ public class DartLauncher : MonoBehaviour
     {
         switch (aimSystem.currentPhase)
         {
-            case AimSystem.AimPhase.Phase1_Select:
-                aimSystem.StartPhase2();
+            case AimSystem.AimPhase.Phase1_Move:
+                aimSystem.LockPosition();
                 break;
 
-            case AimSystem.AimPhase.Phase2_Precision:
+            case AimSystem.AimPhase.Phase2_Bar:
                 Shoot();
                 break;
         }
@@ -29,29 +56,37 @@ public class DartLauncher : MonoBehaviour
 
     void Shoot()
     {
-        if (Time.time - aimSystem.phase2StartTime < aimSystem.minTimeBeforeShoot)
-            return;
+        float accuracy = aimSystem.GetBarAccuracy(); // 0=perfecto, 1=máximo error
+        Vector2 locked = aimSystem.GetLockedPosition();
 
-        Vector2 hitPos = aimSystem.aimPosition;
+        // Desviación aleatoria escalada por accuracy
+        Vector2 deviation = Random.insideUnitCircle * (maxDeviation * accuracy);
+        Vector2 hitPos = locked + deviation;
 
-        // Instanciar dardo visual
         Instantiate(dartPrefab, hitPos, Quaternion.identity);
 
-        // Evaluar puntuación
         ScoreResult result = target.Evaluate(hitPos);
 
-        // Publicar evento — aquí es donde los jokers y el ScoreCalculator escucharán
+        float multiplier = 1f;
+        if (aimSystem.isPerfectAim) multiplier = 1.5f;
+
+        handManager.UseDart();
+
         DartHitData hitData = new DartHitData
         {
-            basePoints   = result.points,
-            isBullseye   = result.isBullseye,
-            isWood       = result.isWood,
-            hitPosition  = result.hitPosition,
-            handIndex    = 0  // HandManager lo rellenará cuando lo tengamos
+            basePoints = Mathf.RoundToInt(result.points * multiplier),
+            isBullseye = result.isBullseye,
+            isWood = result.isWood,
+            hitPosition = hitPos,
+            handIndex = handManager.GetCurrentHandIndex(),
+            isPerfectAim = aimSystem.isPerfectAim
         };
 
         EventBus.Publish_DartHit(hitData);
-        Debug.Log($"Impacto en {hitPos} | Puntos: {result.points} | Bullseye: {result.isBullseye} | Madera: {result.isWood}");
+        handManager.CheckHandEnd();
+
+
+        Debug.Log($"Puntos: {hitData.basePoints} | Locked: {locked} | Accuracy: {accuracy:F2} | PerfectAim: {aimSystem.isPerfectAim} | GoodAim: {aimSystem.isGoodAim}");
 
         aimSystem.ResetAim();
     }

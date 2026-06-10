@@ -6,28 +6,61 @@ public class HUDController : MonoBehaviour
     [Header("Referencias UI")]
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI handsText;
+    public TextMeshProUGUI dartsText;
+    public HandManager handManager;
+    public ScoreCalculator scoreCalculator;
 
-    private int _totalScore = 0;
 
     void OnEnable()
     {
         EventBus.OnDartHit += OnDartHit;
+        EventBus.OnHandStarted += OnHandStarted;
+        EventBus.OnRunEnded += OnRunEnded;
+        EventBus.OnLevelCleared += OnLevelCleared;
+
     }
 
     void OnDisable()
     {
         EventBus.OnDartHit -= OnDartHit;
+        EventBus.OnHandStarted -= OnHandStarted;
+        EventBus.OnRunEnded -= OnRunEnded;
+        EventBus.OnLevelCleared -= OnLevelCleared;
+
     }
 
     void OnDartHit(DartHitData data)
     {
-        _totalScore += data.basePoints;
         UpdateUI();
     }
 
+    void OnHandStarted()
+    {
+        UpdateUI();
+    }
+
+
+    void OnRunEnded()
+    {
+        if (scoreText != null)
+            scoreText.text = $"GAME OVER | Score: {scoreCalculator.GetTotalScore()} / {scoreCalculator.GetTargetScore()}";
+    }
+    void OnLevelCleared()
+    {
+        if (scoreText != null)
+            scoreText.text = $"✓ NIVEL SUPERADO | Score: {scoreCalculator.GetTotalScore()} / {scoreCalculator.GetTargetScore()}";
+    }
     void UpdateUI()
     {
         if (scoreText != null)
-            scoreText.text = "Score: " + _totalScore;
+            scoreText.text = $"Score: {scoreCalculator.GetTotalScore()} / {scoreCalculator.GetTargetScore()}";
+
+        if (handsText != null)
+            handsText.text = "Manos: " + handManager.GetHandsRemaining();
+
+        if (dartsText != null)
+            dartsText.text = "Dardos: " + handManager.GetDartsRemaining();
     }
+
+
 }

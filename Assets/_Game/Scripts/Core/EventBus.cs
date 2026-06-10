@@ -7,21 +7,20 @@ public static class EventBus
     public static event Action<DartHitData> OnDartHit;
 
     // --- Mano ---
-    public static event Action<int> OnHandCompleted;
-    public static event Action OnHandFailed;
     public static event Action OnHandStarted;
 
     // --- Run ---
     public static event Action OnLevelStarted;
     public static event Action OnRunEnded;
+    public static event Action OnLevelCleared;
 
     // --- Publishers ---
     public static void Publish_DartHit(DartHitData data) => OnDartHit?.Invoke(data);
-    public static void Publish_HandCompleted(int score)  => OnHandCompleted?.Invoke(score);
-    public static void Publish_HandFailed()              => OnHandFailed?.Invoke();
-    public static void Publish_HandStarted()             => OnHandStarted?.Invoke();
-    public static void Publish_LevelStarted()            => OnLevelStarted?.Invoke();
-    public static void Publish_RunEnded()                => OnRunEnded?.Invoke();
+    public static void Publish_HandStarted() => OnHandStarted?.Invoke();
+    public static void Publish_LevelStarted() => OnLevelStarted?.Invoke();
+    public static void Publish_RunEnded() => OnRunEnded?.Invoke();
+    public static void Publish_LevelCleared() => OnLevelCleared?.Invoke();
+
 }
 
 public struct DartHitData
@@ -31,4 +30,5 @@ public struct DartHitData
     public bool isWood;
     public Vector2 hitPosition;
     public int handIndex;
+    public bool isPerfectAim;
 }

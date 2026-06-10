@@ -13,6 +13,7 @@ public class Crosshair : MonoBehaviour
     void Update()
     {
         transform.position = aimSystem.aimPosition;
-        _sprite.enabled = aimSystem.currentPhase == AimSystem.AimPhase.Phase2_Precision;
+        // Visible siempre, solo se oculta si no hay fase activa
+        _sprite.enabled = true;
     }
 }
