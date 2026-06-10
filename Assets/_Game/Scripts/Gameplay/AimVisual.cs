@@ -2,16 +2,14 @@ using UnityEngine;
 
 public class AimVisual : MonoBehaviour
 {
-    public AimController aim;
+    public AimSystem aimSystem;
     public Transform circleVisual;
 
     void Update()
     {
-        // posición
-        circleVisual.position = aim.GetCenter();
+        circleVisual.position = aimSystem.GetCenter();
 
-        // tamaño
-        float diameter = aim.GetCurrentRadius() * 2f;
+        float diameter = aimSystem.GetCurrentRadius() * 2f;
         circleVisual.localScale = new Vector3(diameter, diameter, 1f);
     }
 }
