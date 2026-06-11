@@ -17,7 +17,7 @@ public class HandManager : MonoBehaviour
     private bool _combatCleared = false;
 
 
-    void Start() { StartCombat(); }
+    void Start() { } // RunManager se encarga de llamar StartCombat()
     public void SetCombatCleared()
     {
         _combatCleared = true;
