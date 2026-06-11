@@ -3,35 +3,29 @@ using UnityEngine;
 public class DartLauncher : MonoBehaviour
 {
     [Header("Referencias")]
-    public AimSystem aimSystem;
-    public Target target;
-    public GameObject dartPrefab;
-    public HandManager handManager;
-
+    public AimSystem      aimSystem;
+    public Target         target;
+    public GameObject     dartPrefab;
+    public HandManager    handManager;
+    public JokerInventory jokerInventory;
 
     [Header("Desviación máxima en unidades")]
     public float maxDeviation = 1.5f;
 
     void OnEnable()
     {
-        EventBus.OnRunEnded += OnRunEnded;
-        EventBus.OnLevelCleared += OnLevelCleared;
-
+        EventBus.OnGameOver      += OnGameOver;
+        EventBus.OnCombatCleared += OnCombatCleared;
     }
 
     void OnDisable()
     {
-        EventBus.OnRunEnded -= OnRunEnded;
-        EventBus.OnLevelCleared -= OnLevelCleared;
+        EventBus.OnGameOver      -= OnGameOver;
+        EventBus.OnCombatCleared -= OnCombatCleared;
     }
 
-    void OnRunEnded()
-    {
-        enabled = false;
-    }
-    void OnLevelCleared()
-    {
-    }
+    void OnGameOver()      { enabled = false; }
+    void OnCombatCleared() { }
 
     void Update()
     {
@@ -43,49 +37,48 @@ public class DartLauncher : MonoBehaviour
     {
         switch (aimSystem.currentPhase)
         {
-            case AimSystem.AimPhase.Phase1_Move:
-                aimSystem.LockPosition();
-                break;
-
-            case AimSystem.AimPhase.Phase2_Bar:
-                Shoot();
-                break;
+            case AimSystem.AimPhase.Phase1_Move: aimSystem.LockPosition(); break;
+            case AimSystem.AimPhase.Phase2_Bar:  Shoot();                  break;
         }
     }
 
     void Shoot()
     {
-        float accuracy = aimSystem.GetBarAccuracy(); // 0=perfecto, 1=máximo error
-        Vector2 locked = aimSystem.GetLockedPosition();
-
-        // Desviación aleatoria escalada por accuracy
+        float   accuracy  = aimSystem.GetBarAccuracy();
+        Vector2 locked    = aimSystem.GetLockedPosition();
         Vector2 deviation = Random.insideUnitCircle * (maxDeviation * accuracy);
-        Vector2 hitPos = locked + deviation;
+        Vector2 hitPos    = locked + deviation;
 
         Instantiate(dartPrefab, hitPos, Quaternion.identity);
 
-        ScoreResult result = target.Evaluate(hitPos);
-
-        float multiplier = 1f;
-        if (aimSystem.isPerfectAim) multiplier = 1.5f;
+        ScoreResult result          = target.Evaluate(hitPos);
+        float       baseMultiplier  = aimSystem.isPerfectAim ? 1.5f : 1f;
 
         handManager.UseDart();
 
         DartHitData hitData = new DartHitData
         {
-            basePoints = Mathf.RoundToInt(result.points * multiplier),
-            isBullseye = result.isBullseye,
-            isWood = result.isWood,
-            hitPosition = hitPos,
-            handIndex = handManager.GetCurrentHandIndex(),
+            basePoints   = Mathf.RoundToInt(result.points * baseMultiplier),
+            isBullseye   = result.isBullseye,
+            isWood       = result.isWood,
+            hitPosition  = hitPos,
+            handIndex    = handManager.GetCurrentHandIndex(),
             isPerfectAim = aimSystem.isPerfectAim
         };
 
-        EventBus.Publish_DartHit(hitData);
+        // Chain de jokers — devuelve puntos finales procesados
+        int finalPoints = jokerInventory != null
+            ? jokerInventory.ProcessDartHit(hitData)
+            : hitData.basePoints;
+
+        // Publicar con puntos ya procesados
+        DartHitData processedData  = hitData;
+        processedData.basePoints   = finalPoints;
+        EventBus.Publish_DartHit(processedData);
+
         handManager.CheckHandEnd();
 
-
-        Debug.Log($"Puntos: {hitData.basePoints} | Locked: {locked} | Accuracy: {accuracy:F2} | PerfectAim: {aimSystem.isPerfectAim} | GoodAim: {aimSystem.isGoodAim}");
+        Debug.Log($"Puntos base: {hitData.basePoints} | Finales: {finalPoints} | PerfectAim: {aimSystem.isPerfectAim}");
 
         aimSystem.ResetAim();
     }

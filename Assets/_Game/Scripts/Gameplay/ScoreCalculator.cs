@@ -9,14 +9,14 @@ public class ScoreCalculator : MonoBehaviour
 
     void OnEnable()
     {
-        EventBus.OnDartHit += OnDartHit;
-        EventBus.OnHandStarted += OnHandStarted;
+        EventBus.OnDartHit      += OnDartHit;
+        EventBus.OnHandStarted  += OnHandStarted;
     }
 
     void OnDisable()
     {
-        EventBus.OnDartHit -= OnDartHit;
-        EventBus.OnHandStarted -= OnHandStarted;
+        EventBus.OnDartHit      -= OnDartHit;
+        EventBus.OnHandStarted  -= OnHandStarted;
     }
 
     void OnDartHit(DartHitData data)
@@ -27,20 +27,13 @@ public class ScoreCalculator : MonoBehaviour
         if (_totalScore >= targetScore)
         {
             Debug.Log("¡Objetivo alcanzado!");
-            EventBus.Publish_LevelCleared();
+            EventBus.Publish_CombatCleared();
         }
     }
 
     void OnHandStarted()
     {
-        // Ya no reseteamos — el score es acumulado
-    }
-
-    public bool EvaluateHand()
-    {
-        bool success = _totalScore >= targetScore;
-        Debug.Log($"Mano evaluada | Score: {_totalScore} | Objetivo: {targetScore} | Superada: {success}");
-        return success;
+        // Score acumulado — no se resetea por mano
     }
 
     public void ResetScore()
@@ -48,6 +41,6 @@ public class ScoreCalculator : MonoBehaviour
         _totalScore = 0;
     }
 
-    public int GetTotalScore() => _totalScore;
+    public int GetTotalScore()  => _totalScore;
     public int GetTargetScore() => targetScore;
 }

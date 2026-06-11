@@ -7,32 +7,28 @@ public class RunManager : MonoBehaviour
     public List<ScenarioData> scenarios;
 
     [Header("Referencias")]
-    public HandManager handManager;
+    public HandManager     handManager;
     public ScoreCalculator scoreCalculator;
-    public DartLauncher dartLauncher;
+    public DartLauncher    dartLauncher;
 
-
-    private int _currentScenarioIndex = 0;
+    private int          _currentScenarioIndex = 0;
     private ScenarioData _currentScenario;
 
     public static LevelConfig CurrentLevel { get; private set; }
 
     void OnEnable()
     {
-        EventBus.OnLevelCleared += OnLevelCleared;
-        EventBus.OnRunEnded += OnRunEnded;
+        EventBus.OnCombatCleared += OnCombatCleared;
+        EventBus.OnGameOver      += OnGameOver;
     }
 
     void OnDisable()
     {
-        EventBus.OnLevelCleared -= OnLevelCleared;
-        EventBus.OnRunEnded -= OnRunEnded;
+        EventBus.OnCombatCleared -= OnCombatCleared;
+        EventBus.OnGameOver      -= OnGameOver;
     }
 
-    void Start()
-    {
-        StartRun();
-    }
+    void Start() { StartRun(); }
 
     void StartRun()
     {
@@ -49,24 +45,24 @@ public class RunManager : MonoBehaviour
 
     void StartCombat(LevelConfig level)
     {
-        CurrentLevel = level;
-        scoreCalculator.targetScore = level.targetScore;
+        CurrentLevel                 = level;
+        scoreCalculator.targetScore  = level.targetScore;
         handManager.ApplyModifiers(level.handsModifier, level.dartsModifier);
-        handManager.StartRun();
+        handManager.StartCombat();
         scoreCalculator.ResetScore();
-        EventBus.Publish_LevelStarted();
-        Debug.Log($"Combate: {level.enemyName} | Objetivo: {level.targetScore}");
+        EventBus.Publish_CombatStarted();
         dartLauncher.enabled = true;
+        Debug.Log($"Combate: {level.enemyName} | Objetivo: {level.targetScore}");
     }
 
-    void OnLevelCleared()
+    void OnCombatCleared()
     {
         dartLauncher.enabled = false;
-        Debug.Log($"Nivel superado: {CurrentLevel.enemyName}");
+        Debug.Log($"Combate superado: {CurrentLevel.enemyName}");
         NextStep();
     }
 
-    void OnRunEnded()
+    void OnGameOver()
     {
         Debug.Log("GAME OVER");
     }

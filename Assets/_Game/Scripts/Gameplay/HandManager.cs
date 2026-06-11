@@ -6,36 +6,33 @@ public class HandManager : MonoBehaviour
     public int maxHands     = 2;
     public int dartsPerHand = 4;
 
-    private int _handsRemaining;
-    private int _dartsRemaining;
-    private int _currentHandIndex;
-    private int _handsModifier = 0;
-    private int _dartsModifier = 0;
-    private bool _levelCleared = false;
+    [Header("Referencias")]
+    public JokerInventory jokerInventory;
+
+    private int  _handsRemaining;
+    private int  _dartsRemaining;
+    private int  _currentHandIndex;
+    private int  _handsModifier  = 0;
+    private int  _dartsModifier  = 0;
+    private bool _combatCleared  = false;
 
     void OnEnable()
     {
-        EventBus.OnLevelCleared += OnLevelCleared;
+        EventBus.OnCombatCleared += OnCombatCleared;
     }
 
     void OnDisable()
     {
-        EventBus.OnLevelCleared -= OnLevelCleared;
+        EventBus.OnCombatCleared -= OnCombatCleared;
     }
 
-    void OnLevelCleared()
-    {
-        _levelCleared = true;
-    }
+    void OnCombatCleared() { _combatCleared = true; }
 
-    void Start()
-    {
-        StartRun();
-    }
+    void Start() { StartCombat(); }
 
-    public void StartRun()
+    public void StartCombat()
     {
-        _levelCleared     = false;
+        _combatCleared    = false;
         _handsRemaining   = maxHands + _handsModifier;
         _currentHandIndex = 0;
         StartHand();
@@ -70,26 +67,42 @@ public class HandManager : MonoBehaviour
 
     public void CheckHandEnd()
     {
-        if (_levelCleared) return;
+        if (_combatCleared) return;
         if (_dartsRemaining <= 0)
             EvaluateHand();
     }
 
     void EvaluateHand()
     {
+        // Notificar a jokers antes de pasar a la siguiente mano
+        jokerInventory?.ProcessHandComplete();
+
         _currentHandIndex++;
         _handsRemaining--;
 
         if (_handsRemaining <= 0)
         {
-            Debug.Log("Run terminado");
-            EventBus.Publish_RunEnded();
+            Debug.Log("Game Over");
+            EventBus.Publish_GameOver();
         }
         else
         {
             Debug.Log($"Manos restantes: {_handsRemaining}");
             StartHand();
         }
+    }
+
+    // --- Helpers para jokers ---
+    public void AddDartsToCurrentHand(int amount)
+    {
+        _dartsRemaining += amount;
+        Debug.Log($"[HandManager] +{amount} dardos | Quedan: {_dartsRemaining}");
+    }
+
+    public void AddHands(int amount)
+    {
+        _handsRemaining += amount;
+        Debug.Log($"[HandManager] +{amount} manos | Quedan: {_handsRemaining}");
     }
 
     public int GetHandsRemaining()   => _handsRemaining;
