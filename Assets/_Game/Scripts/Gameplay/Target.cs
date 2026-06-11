@@ -1,65 +1,158 @@
 using UnityEngine;
 
+/// <summary>
+/// Diana con hit detection por ángulo + distancia.
+/// Radios y sectores vienen del TargetData asignado en LevelConfig.
+/// Llama a TargetData.InitForCombat() al iniciar cada combate.
+/// </summary>
 public class Target : MonoBehaviour
 {
-    [Header("Referencias visuales")]
-    public SpriteRenderer bullseyeVisual;
-    public SpriteRenderer innerVisual;
-    public SpriteRenderer middleVisual;
+    [Header("Datos")]
+    public TargetData data;
 
-    [Header("Puntuación")]
-    public int bullseyePoints = 100;
-    public int innerPoints    = 50;
-    public int middlePoints   = 20;
-    public int outerPoints    = 0;
+    [Header("Referencias")]
+    public TargetVisual visual;  // Opcional — si está asignado, redibuja al iniciar combate
 
-    private float _bullseyeRadius;
-    private float _innerRadius;
-    private float _middleRadius;
-
-    void Start()
+    void OnEnable()
     {
-        _bullseyeRadius = bullseyeVisual.bounds.extents.x;
-        _innerRadius    = innerVisual.bounds.extents.x;
-        _middleRadius   = middleVisual.bounds.extents.x;
-
-        Debug.Log($"Radios — Bullseye: {_bullseyeRadius} | Inner: {_innerRadius} | Middle: {_middleRadius}");
+        EventBus.OnCombatStarted += OnCombatStarted;
     }
 
+    void OnDisable()
+    {
+        EventBus.OnCombatStarted -= OnCombatStarted;
+    }
+
+    void OnCombatStarted()
+    {
+        if (data == null) return;
+        data.InitForCombat();
+        visual?.Redraw(data);
+    }
+
+    /// <summary>
+    /// Evalúa un punto de impacto y devuelve el ScoreResult completo.
+    /// </summary>
     public ScoreResult Evaluate(Vector2 hitPoint)
     {
-        float dist = Vector2.Distance(hitPoint, transform.position);
+        if (data == null)
+        {
+            Debug.LogWarning("[Target] No hay TargetData asignado");
+            return new ScoreResult { isWood = true, hitPosition = hitPoint };
+        }
+
+        Vector2 delta = hitPoint - (Vector2)transform.position;
+        float   dist  = delta.magnitude;
+        // Atan2(x,y) para que 0° sea arriba
+        float   angle = Mathf.Atan2(delta.x, delta.y) * Mathf.Rad2Deg;
 
         ScoreResult result = new ScoreResult();
         result.hitPosition = hitPoint;
+        result.angle       = angle;
+        result.distance    = dist;
 
-        if (dist <= _bullseyeRadius)
+        // Bullseye interior (50pts)
+        if (dist <= data.bullseyeInnerRadius)
         {
-            result.points     = bullseyePoints;
+            result.points     = 50;
             result.isBullseye = true;
+            result.zone       = HitZone.BullseyeInner;
+            return result;
         }
-        else if (dist <= _innerRadius)
+
+        // Bullseye exterior (25pts)
+        if (dist <= data.bullseyeOuterRadius)
         {
-            result.points = innerPoints;
+            result.points = 25;
+            result.zone   = HitZone.BullseyeOuter;
+            return result;
         }
-        else if (dist <= _middleRadius)
+
+        // Fuera de la diana
+        if (dist > data.doubleOuterRadius)
         {
-            result.points = middlePoints;
+            result.points = 0;
+            result.isWood = true;
+            result.zone   = HitZone.Wood;
+            return result;
+        }
+
+        // Dentro — determinar sector
+        TargetSector sector = data.GetSectorAtAngle(angle);
+        if (sector == null)
+        {
+            result.isWood = true;
+            result.zone   = HitZone.Wood;
+            return result;
+        }
+
+        result.sector      = sector;
+        result.baseValue   = sector.baseValue;
+        result.specialType = sector.specialType;
+
+        // Determinar zona: triple, doble o simple
+        if (dist >= data.tripleInnerRadius && dist <= data.tripleOuterRadius)
+        {
+            result.zone       = HitZone.Triple;
+            result.multiplier = 3;
+            result.points     = sector.baseValue * 3;
+        }
+        else if (dist >= data.doubleInnerRadius && dist <= data.doubleOuterRadius)
+        {
+            result.zone       = HitZone.Double;
+            result.multiplier = 2;
+            result.points     = sector.baseValue * 2;
         }
         else
         {
-            result.points = outerPoints;
-            result.isWood  = true;
+            result.zone       = HitZone.Single;
+            result.multiplier = 1;
+            result.points     = sector.baseValue;
+        }
+
+        // Sector especial sobreescribe puntos
+        if (sector.specialType == SectorSpecialType.Penalty)
+        {
+            result.points    = -Mathf.Abs(result.points);
+            result.isPenalty = true;
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Asigna un nuevo TargetData en runtime (llamado por RunManager al cambiar de combate).
+    /// </summary>
+    public void SetTargetData(TargetData newData)
+    {
+        data = newData;
+        data.InitForCombat();
+        visual?.Redraw(data);
     }
 }
 
 public struct ScoreResult
 {
-    public int points;
-    public bool isBullseye;
-    public bool isWood;
-    public Vector2 hitPosition;
+    public int              points;
+    public int              baseValue;
+    public int              multiplier;
+    public bool             isBullseye;
+    public bool             isWood;
+    public bool             isPenalty;
+    public HitZone          zone;
+    public float            angle;
+    public float            distance;
+    public Vector2          hitPosition;
+    public TargetSector     sector;
+    public SectorSpecialType specialType;
+}
+
+public enum HitZone
+{
+    Wood,
+    Single,
+    Double,
+    Triple,
+    BullseyeOuter,
+    BullseyeInner
 }

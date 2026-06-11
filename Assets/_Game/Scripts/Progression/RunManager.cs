@@ -7,25 +7,27 @@ public class RunManager : MonoBehaviour
     public List<ScenarioData> scenarios;
 
     [Header("Referencias")]
-    public HandManager     handManager;
+    public HandManager handManager;
     public ScoreCalculator scoreCalculator;
-    public DartLauncher    dartLauncher;
+    public DartLauncher dartLauncher;
+    public Target target;           // Para asignar TargetData por combate
 
-    private int          _currentScenarioIndex = 0;
+    private int _currentScenarioIndex = 0;
     private ScenarioData _currentScenario;
+    private int _currentCombatIndex = 0; // 0=enemy1, 1=enemy2, 2=enemy3, 3=boss
 
     public static LevelConfig CurrentLevel { get; private set; }
 
     void OnEnable()
     {
         EventBus.OnCombatCleared += OnCombatCleared;
-        EventBus.OnGameOver      += OnGameOver;
+        EventBus.OnGameOver += OnGameOver;
     }
 
     void OnDisable()
     {
         EventBus.OnCombatCleared -= OnCombatCleared;
-        EventBus.OnGameOver      -= OnGameOver;
+        EventBus.OnGameOver -= OnGameOver;
     }
 
     void Start() { StartRun(); }
@@ -39,15 +41,21 @@ public class RunManager : MonoBehaviour
     void LoadScenario(ScenarioData scenario)
     {
         _currentScenario = scenario;
+        _currentCombatIndex = 0;
         Debug.Log($"Escenario: {scenario.scenarioName}");
         StartCombat(scenario.enemy1);
     }
 
     void StartCombat(LevelConfig level)
     {
-        CurrentLevel                 = level;
-        scoreCalculator.targetScore  = level.targetScore;
+        CurrentLevel = level;
+        scoreCalculator.targetScore = level.targetScore;
         handManager.ApplyModifiers(level.handsModifier, level.dartsModifier);
+
+        // Asignar diana del nivel si tiene una, si no conserva la que hay
+        if (level.targetData != null && target != null)
+            target.SetTargetData(level.targetData);
+
         handManager.StartCombat();
         scoreCalculator.ResetScore();
         EventBus.Publish_CombatStarted();
@@ -69,33 +77,37 @@ public class RunManager : MonoBehaviour
 
     void NextStep()
     {
-        if (CurrentLevel == _currentScenario.enemy1)
+        _currentCombatIndex++;
+
+        switch (_currentCombatIndex)
         {
-            Debug.Log(_currentScenario.hasEventAfterEnemy1 ? "→ Evento" : "→ Tienda");
-            StartCombat(_currentScenario.enemy2);
-        }
-        else if (CurrentLevel == _currentScenario.enemy2)
-        {
-            Debug.Log(_currentScenario.hasEventAfterEnemy2 ? "→ Evento" : "→ Tienda");
-            StartCombat(_currentScenario.boss);
-        }
-        else if (CurrentLevel == _currentScenario.boss)
-        {
-            Debug.Log("→ Jefe derrotado");
-            NextScenario();
+            case 1:
+                Debug.Log(_currentScenario.hasEventAfterEnemy1 ? "→ Evento" : "→ Tienda");
+                StartCombat(_currentScenario.enemy2);
+                break;
+            case 2:
+                Debug.Log(_currentScenario.hasEventAfterEnemy2 ? "→ Evento" : "→ Tienda");
+                StartCombat(_currentScenario.enemy3);
+                break;
+            case 3:
+                Debug.Log(_currentScenario.hasEventAfterEnemy3 ? "→ Evento" : "→ Tienda");
+                StartCombat(_currentScenario.boss);
+                break;
+            case 4:
+                Debug.Log("→ Jefe derrotado");
+                NextScenario();
+                break;
         }
     }
 
     void NextScenario()
     {
         _currentScenarioIndex++;
-
         if (_currentScenarioIndex >= scenarios.Count)
         {
             Debug.Log("¡Run completado!");
             return;
         }
-
         LoadScenario(scenarios[_currentScenarioIndex]);
     }
 }

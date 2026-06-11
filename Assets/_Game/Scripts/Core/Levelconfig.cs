@@ -11,6 +11,10 @@ public class LevelConfig : ScriptableObject
     [Header("Objetivo")]
     public int targetScore;
 
+    [Header("Diana")]
+    [Tooltip("Si es null usa la diana por defecto asignada en el componente Target de la escena")]
+    public TargetData targetData;
+
     [Header("Modificadores")]
     public int handsModifier = 0;
     public int dartsModifier = 0;

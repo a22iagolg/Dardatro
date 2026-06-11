@@ -11,9 +11,11 @@ public class ScenarioData : ScriptableObject
     [Header("Combates")]
     public LevelConfig enemy1;
     public LevelConfig enemy2;
+    public LevelConfig enemy3;
     public LevelConfig boss;
 
     [Header("Entre combates")]
     public bool hasEventAfterEnemy1;
     public bool hasEventAfterEnemy2;
+    public bool hasEventAfterEnemy3;
 }

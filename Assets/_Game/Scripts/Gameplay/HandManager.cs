@@ -3,37 +3,26 @@ using UnityEngine;
 public class HandManager : MonoBehaviour
 {
     [Header("Config")]
-    public int maxHands     = 2;
+    public int maxHands = 2;
     public int dartsPerHand = 4;
 
     [Header("Referencias")]
     public JokerInventory jokerInventory;
 
-    private int  _handsRemaining;
-    private int  _dartsRemaining;
-    private int  _currentHandIndex;
-    private int  _handsModifier  = 0;
-    private int  _dartsModifier  = 0;
-    private bool _combatCleared  = false;
+    private int _handsRemaining;
+    private int _dartsRemaining;
+    private int _currentHandIndex;
+    private int _handsModifier = 0;
+    private int _dartsModifier = 0;
+    private bool _combatCleared = false;
 
-    void OnEnable()
-    {
-        EventBus.OnCombatCleared += OnCombatCleared;
-    }
-
-    void OnDisable()
-    {
-        EventBus.OnCombatCleared -= OnCombatCleared;
-    }
-
-    void OnCombatCleared() { _combatCleared = true; }
 
     void Start() { StartCombat(); }
 
     public void StartCombat()
     {
-        _combatCleared    = false;
-        _handsRemaining   = maxHands + _handsModifier;
+        _combatCleared = false;
+        _handsRemaining = maxHands + _handsModifier;
         _currentHandIndex = 0;
         StartHand();
     }
@@ -63,6 +52,7 @@ public class HandManager : MonoBehaviour
     {
         _dartsRemaining--;
         Debug.Log($"Dardo usado | Quedan: {_dartsRemaining}");
+        CheckHandEnd();
     }
 
     public void CheckHandEnd()
@@ -71,7 +61,6 @@ public class HandManager : MonoBehaviour
         if (_dartsRemaining <= 0)
             EvaluateHand();
     }
-
     void EvaluateHand()
     {
         // Notificar a jokers antes de pasar a la siguiente mano
@@ -82,7 +71,6 @@ public class HandManager : MonoBehaviour
 
         if (_handsRemaining <= 0)
         {
-            Debug.Log("Game Over");
             EventBus.Publish_GameOver();
         }
         else
@@ -105,7 +93,7 @@ public class HandManager : MonoBehaviour
         Debug.Log($"[HandManager] +{amount} manos | Quedan: {_handsRemaining}");
     }
 
-    public int GetHandsRemaining()   => _handsRemaining;
-    public int GetDartsRemaining()   => _dartsRemaining;
+    public int GetHandsRemaining() => _handsRemaining;
+    public int GetDartsRemaining() => _dartsRemaining;
     public int GetCurrentHandIndex() => _currentHandIndex;
 }

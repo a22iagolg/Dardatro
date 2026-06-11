@@ -14,7 +14,6 @@ public class AimBarVisual : MonoBehaviour
 
     void Start()
     {
-        UpdateZones();
     }
 
     void UpdateZones()
@@ -22,11 +21,11 @@ public class AimBarVisual : MonoBehaviour
         // Escalar GoodZone y PerfectZone según los valores del AimSystem
         float bgHeight = barBackground.bounds.size.y;
 
-        SetZoneHeight(goodZoneVisual,    aimSystem.goodZone   * bgHeight);
+        SetZoneHeight(goodZoneVisual, aimSystem.goodZone * bgHeight);
         SetZoneHeight(perfectZoneVisual, aimSystem.perfectZone * bgHeight);
 
         // Centrar ambas zonas en el Background
-        goodZoneVisual.transform.localPosition    = Vector3.zero;
+        goodZoneVisual.transform.localPosition = Vector3.zero;
         perfectZoneVisual.transform.localPosition = Vector3.zero;
     }
 
@@ -41,10 +40,10 @@ public class AimBarVisual : MonoBehaviour
     void Update()
     {
         bool isPhase2 = aimSystem.currentPhase == AimSystem.AimPhase.Phase2_Bar;
-        barBackground.enabled     = isPhase2;
-        goodZoneVisual.enabled    = isPhase2;
+        barBackground.enabled = isPhase2;
+        goodZoneVisual.enabled = isPhase2;
         perfectZoneVisual.enabled = isPhase2;
-        indicator.enabled         = isPhase2;
+        indicator.enabled = isPhase2;
 
         if (!isPhase2) return;
 
@@ -64,5 +63,10 @@ public class AimBarVisual : MonoBehaviour
             indicator.color = new Color(1f, 0.5f, 0f);
         else
             indicator.color = Color.cyan;
+
+        // Posicionar zonas según _zoneCenter aleatorio
+        float zoneCenterOffset = Mathf.Lerp(-barHeight / 2f, barHeight / 2f, aimSystem.GetZoneCenter());
+        goodZoneVisual.transform.localPosition = new Vector3(0f, zoneCenterOffset, 0f);
+        perfectZoneVisual.transform.localPosition = new Vector3(0f, zoneCenterOffset, 0f);
     }
 }
