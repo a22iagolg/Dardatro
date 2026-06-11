@@ -18,7 +18,10 @@ public class HandManager : MonoBehaviour
 
 
     void Start() { StartCombat(); }
-
+    public void SetCombatCleared()
+    {
+        _combatCleared = true;
+    }
     public void StartCombat()
     {
         _combatCleared = false;

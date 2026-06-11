@@ -65,6 +65,7 @@ public class RunManager : MonoBehaviour
 
     void OnCombatCleared()
     {
+        handManager.SetCombatCleared();
         dartLauncher.enabled = false;
         Debug.Log($"Combate superado: {CurrentLevel.enemyName}");
         NextStep();
